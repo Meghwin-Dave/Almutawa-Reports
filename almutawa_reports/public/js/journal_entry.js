@@ -24,7 +24,13 @@ frappe.ui.form.on("Journal Entry", {
 
 	refresh: function (frm) {
 		erpnext.toggle_naming_series();
-
+		frm.fields_dict['accounts'].grid.get_field('account').get_query = function() {
+            return {
+                filters: {
+                    'is_group': 0
+                }
+            };
+        };
 		if (frm.doc.docstatus > 0) {
 			frm.add_custom_button(
 				__("Ledger"),
@@ -78,8 +84,51 @@ frappe.ui.form.on("Journal Entry", {
 		}
 
 		erpnext.accounts.unreconcile_payment.add_unreconcile_btn(frm);
+
+		frm.fields_dict['accounts'].grid.get_field('department').get_query = function(doc, cdt, cdn) {
+            const row = locals[cdt][cdn];
+            
+            // Apply filter using the pre-fetched department value
+            if (row.department_filter) {
+                return {
+                    filters: { "name": row.department_filter }
+                };
+            } else {
+                return {};
+            }
+        };
+		    
+		frm.set_query('project', 'accounts', (frm, cdt, cdn) => { 
+			const row = locals[cdt][cdn];
+            if(row.department){
+		        return {
+			        filters:{"department":row.department,"is_active":"Yes"}
+			    }
+		    }else{
+		        return {
+			        filters:{"is_active":"Yes"}
+			    }
+		    }
+		});
+		
+		    
 	},
 	before_save: function (frm) {
+		if (frm.is_new() && !frm.doc.custom_created_by) {
+            frappe.call({
+                method: 'frappe.client.get_value',
+                args: {
+                    doctype: 'User',
+                    filters: { 'name': frappe.session.user },
+                    fieldname: 'full_name'
+                },
+                callback: function(response) {
+                    if (response && response.message) {
+                        frm.set_value('custom_created_by', response.message.full_name);
+                    }
+                }
+            });
+        }
 		if (frm.doc.docstatus == 0 && !frm.doc.is_system_generated) {
 			let payment_entry_references = frm.doc.accounts.filter(
 				(elem) => elem.reference_type == "Payment Entry"
@@ -213,6 +262,24 @@ frappe.ui.form.on("Journal Entry", {
 			});
 		}
 	},
+	onload: function(frm) {
+        // Set "Created By" field with the full name when the form is loaded, but only for new documents
+        if (frm.is_new() && !frm.doc.custom_created_by) {
+            frappe.call({
+                method: 'frappe.client.get_value',
+                args: {
+                    doctype: 'User',
+                    filters: { 'name': frappe.session.user },
+                    fieldname: 'full_name'
+                },
+                callback: function(response) {
+                    if (response && response.message) {
+                        frm.set_value('custom_created_by', response.message.full_name);
+                    }
+                }
+            });
+        }
+    },
 });
 
 var update_jv_details = function (doc, r) {
@@ -467,6 +534,19 @@ frappe.ui.form.on("Journal Entry Account", {
 
 		erpnext.journal_entry.set_debit_credit_in_company_currency(frm, cdt, cdn);
 	},
+	project: function(frm, cdt, cdn) {
+        const row = locals[cdt][cdn];
+        if (row.project) {
+            // Fetch the department when the project is selected
+            frappe.db.get_value('Project', row.project, 'department', (r) => {
+                if (r && r.department) {
+                    frappe.model.set_value(cdt, cdn, 'department_filter', r.department);
+                    console.log('Fetched Department:', r.department);
+                }
+            });
+        }
+        else {frappe.model.set_value(cdt, cdn, 'department_filter','');}
+    }
 });
 
 frappe.ui.form.on("Journal Entry Account", "accounts_remove", function (frm) {
