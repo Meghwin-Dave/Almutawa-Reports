@@ -34,5 +34,18 @@ frappe.ui.form.on('Item', {
                 }
             });
         }
+    },
+    custom_department: function(frm) {
+        frm.set_query('custom_project', function() {
+            if(frm.doc.custom_department){
+		        return {
+			        filters:{"department":frm.doc.custom_department,"is_active":"Yes"}
+			    }
+		    }else{
+		        return {
+			        filters:{"is_active":"Yes"}
+			    }
+		    }
+		});
     }
 });

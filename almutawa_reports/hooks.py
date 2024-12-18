@@ -52,6 +52,7 @@ tree_js = {"Account": "public/js/coa_expand_all.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
 doctype_js = {
     "Journal Entry": "public/js/journal_entry.js",
+    "Budget" : "public/js/budget.js",
     "Account" : "public/js/account.js",
     "Sales Invoice" : "public/js/sales_invoice.js",
     "Payment Entry" : "public/js/payment_entry.js",
@@ -65,6 +66,7 @@ doctype_js = {
     "Supplier Quotation" : "public/js/supplier_quotation.js",
     "Purchase Order": "public/js/purchase_order.js",
     "Purchase Receipt" : "public/js/purchase_receipt.js",
+    "Purchase Invoice": "public/js/purchase_invoice.js",
     "Stock Entry": "public/js/stock_entry.js",
     "Request for Quotation" : "public/js/rfq.js",
     "Employee" : "public/js/employee.js",
